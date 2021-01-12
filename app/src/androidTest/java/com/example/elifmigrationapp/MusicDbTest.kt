@@ -1,11 +1,14 @@
 package com.example.elifmigrationapp
 
 import androidx.room.Room
+import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.SupportSQLiteQuery
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -19,7 +22,7 @@ class MusicDbTest {
     }
 
     @Test
-    fun part1Test() {
+    fun testP1() {
         val db = Room.inMemoryDatabaseBuilder(
             InstrumentationRegistry.getInstrumentation().context,
             MusicDatabase::class.java
@@ -28,9 +31,9 @@ class MusicDbTest {
 
         // Adding the last column as we finish part 2
         val songs = listOf(
-                Song(3, "White Shadows", 3, 1),
-                Song(1, "Tell Me Baby", 3, 3),
-                Song(2, "Hysteria", 2, 2),
+            Song(1, "Tell Me Baby", 3, 3, 3),
+            Song(2, "Hysteria", 2, 2, 2),
+            Song(3, "White Shadows", 3, 1, 1)
         )
         dao.insertAllSongs(songs)
         val result = dao.getAllSongs()
@@ -39,7 +42,7 @@ class MusicDbTest {
     }
 
     @Test
-    fun afterMigration1To2Test() {
+    fun testMultiTableChangeInP2() {
         val db = Room.inMemoryDatabaseBuilder(
                 InstrumentationRegistry.getInstrumentation().context,
                 MusicDatabase::class.java
@@ -56,12 +59,12 @@ class MusicDbTest {
         dao.insertAllArtists(artists)
 
         val songs = listOf(
-                Song(1, "White Shadows", 3, 1),
-                Song(2, "Yellow", 3, 1),
-                Song(3, "Hysteria", 2, 2),
-                Song(4, "Tell Me Baby", 3, 3),
-                Song(5, "Snow", 3, 3),
-                Song(6, "Californication", 3, 3),
+                Song(1, "White Shadows", 3, 1, 1),
+                Song(2, "Yellow", 3, 1, 1),
+                Song(3, "Hysteria", 2, 2, 2),
+                Song(4, "Tell Me Baby", 3, 3, 3),
+                Song(5, "Snow", 3, 3, 3),
+                Song(6, "Californication", 3, 3, 3),
                 )
         dao.insertAllSongs(songs)
 
@@ -71,7 +74,51 @@ class MusicDbTest {
                 ArtistAndNumOfSongs("Muse", 1),
                 ArtistAndNumOfSongs("Red Hot Chili Peppers", 3),
         )
-
         assertThat(actualResult).isEqualTo(expectedResult)
+    }
+
+
+    @Test
+    fun firstToSecondMigrationInP2() {
+        val migrationTestHelper = MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            MusicDatabase::class.java.canonicalName,
+            FrameworkSQLiteOpenHelperFactory()
+        )
+        migrationTestHelper.createDatabase("test_db", 1)
+        migrationTestHelper.runMigrationsAndValidate(
+            "test_db",
+            2,
+            false,
+            Migrations.migration1To2
+        )
+    }
+
+    @Test
+    fun testMultiTableChangeInP3() {
+        val migrationTestHelper = MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            MusicDatabase::class.java.canonicalName,
+            FrameworkSQLiteOpenHelperFactory()
+        )
+        migrationTestHelper.createDatabase("test_db", 2).use { db ->
+            // I ended up making all these not null should i switch this back
+            //db.execSQL("INSERT INTO Song VALUES (1, 'Ni Bien Ni Mal', 240, NULL)")
+            db.execSQL("INSERT INTO Song VALUES (1, 'Ni Bien Ni Mal', 240, 1)")
+        }
+        migrationTestHelper.runMigrationsAndValidate(
+            "test_db",
+            3,
+            false,
+            Migrations.migration1To2, Migrations.migration2To3
+        )
+        val db = Room.databaseBuilder(
+            InstrumentationRegistry.getInstrumentation().context,
+            MusicDatabase::class.java,
+            "test_db"
+        ).build()
+        val dao = db.musicDao()
+        assertThat(dao.getAllSongs().size).isEqualTo(1)
+
     }
 }
