@@ -19,17 +19,18 @@ class MusicDbTest {
     }
 
     @Test
-    fun insertAndGetSongs() {
+    fun part1Test() {
         val db = Room.inMemoryDatabaseBuilder(
             InstrumentationRegistry.getInstrumentation().context,
             MusicDatabase::class.java
         ).build()
         val dao = db.musicDao()
 
+        // Adding the last column as we finish part 2
         val songs = listOf(
-                Song(3, "White Shadows", 3),
-                Song(1, "Tell Me Baby", 3),
-                Song(2, "Hysteria", 2),
+                Song(3, "White Shadows", 3, 1),
+                Song(1, "Tell Me Baby", 3, 3),
+                Song(2, "Hysteria", 2, 2),
         )
         dao.insertAllSongs(songs)
         val result = dao.getAllSongs()
@@ -38,7 +39,7 @@ class MusicDbTest {
     }
 
     @Test
-    fun afterMigration1To2() {
+    fun afterMigration1To2Test() {
         val db = Room.inMemoryDatabaseBuilder(
                 InstrumentationRegistry.getInstrumentation().context,
                 MusicDatabase::class.java
@@ -47,23 +48,30 @@ class MusicDbTest {
                 .build()
         val dao = db.musicDao()
 
-//        val artists = listOf(
-//                Artist(3, "Red Hot Chili Peppers"),
-//                Artist(2, "Muse"),
-//                Artist(1, "Coldplay")
-//        )
-//        dao.insertAllArtists(artists)
-//
-//        val songs = listOf(
-//                Song(1, "White Shadows", 3, 1),
-//                Song(2, "Yellow", 3, 1),
-//                Song(4, "Hysteria", 2, 2),
-//                Song(3, "Tell Me Baby", 3, 1),
-//                Song(3, "Snow", 3, 1),
-//                Song(3, "Californication", 3, 1),
-//
-//                )
-//        dao.insertAllSongs(songs)
-//        val result = dao.getAllSongs()
+        val artists = listOf(
+                Artist(1, "Coldplay"),
+                Artist(2, "Muse"),
+                Artist(3, "Red Hot Chili Peppers"),
+        )
+        dao.insertAllArtists(artists)
+
+        val songs = listOf(
+                Song(1, "White Shadows", 3, 1),
+                Song(2, "Yellow", 3, 1),
+                Song(3, "Hysteria", 2, 2),
+                Song(4, "Tell Me Baby", 3, 3),
+                Song(5, "Snow", 3, 3),
+                Song(6, "Californication", 3, 3),
+                )
+        dao.insertAllSongs(songs)
+
+        val actualResult = dao.getArtistAndSongCount()
+        val expectedResult = listOf(
+                ArtistAndNumOfSongs("Coldplay", 2),
+                ArtistAndNumOfSongs("Muse", 1),
+                ArtistAndNumOfSongs("Red Hot Chili Peppers", 3),
+        )
+
+        assertThat(actualResult).isEqualTo(expectedResult)
     }
 }
