@@ -1,0 +1,2 @@
+rootProject.name = "Elif Migration App"
+include ':app'
