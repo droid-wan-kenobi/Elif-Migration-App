@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 
 @Entity
-data class Song internal constructor(
+data class Song (
     @field:PrimaryKey val id: Int, val title: String, val length: Int, val artistId: Int,
     val albumId: Int
 ) {

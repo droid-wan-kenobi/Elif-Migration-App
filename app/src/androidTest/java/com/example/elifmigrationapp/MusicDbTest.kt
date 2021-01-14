@@ -102,7 +102,7 @@ class MusicDbTest {
             FrameworkSQLiteOpenHelperFactory()
         )
         migrationTestHelper.createDatabase("test_db", 2).use { db ->
-            // I ended up making all these not null should i switch this back
+            // I ended up making all album and artist ids not null should i switch this back
             //db.execSQL("INSERT INTO Song VALUES (1, 'Ni Bien Ni Mal', 240, NULL)")
             db.execSQL("INSERT INTO Song VALUES (1, 'Ni Bien Ni Mal', 240, 1)")
         }
@@ -112,13 +112,14 @@ class MusicDbTest {
             false,
             Migrations.migration1To2, Migrations.migration2To3
         )
+
+        // From this line onwards it fails
         val db = Room.databaseBuilder(
-            InstrumentationRegistry.getInstrumentation().context,
+            InstrumentationRegistry.getInstrumentation().targetContext,
             MusicDatabase::class.java,
             "test_db"
         ).build()
         val dao = db.musicDao()
         assertThat(dao.getAllSongs().size).isEqualTo(1)
-
     }
 }

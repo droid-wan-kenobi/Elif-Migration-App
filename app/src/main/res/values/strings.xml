@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Elif Migration App</string>
+    <string name="entry1">Song 1.</string>
+    <string name="entry2">Song 2.</string>
+    <string name="entry3">Song 3.</string>
+    <string name="entry4">Song 4.</string>
+    <string name="start">Starting App...</string>
 </resources>

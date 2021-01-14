@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity
-data class Artist internal constructor(
+data class Artist (
         @field:PrimaryKey val id: Int, val name: String
 ) {
     companion object {
