@@ -14,6 +14,11 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MusicDbTest {
+    private val migrationTestHelper = MigrationTestHelper(
+        InstrumentationRegistry.getInstrumentation(),
+        MusicDatabase::class.java.canonicalName,
+        FrameworkSQLiteOpenHelperFactory()
+    )
     @Test
     fun initializeDb() {
         // Context of the app under test.
@@ -80,11 +85,6 @@ class MusicDbTest {
 
     @Test
     fun firstToSecondMigrationInP2() {
-        val migrationTestHelper = MigrationTestHelper(
-            InstrumentationRegistry.getInstrumentation(),
-            MusicDatabase::class.java.canonicalName,
-            FrameworkSQLiteOpenHelperFactory()
-        )
         migrationTestHelper.createDatabase("test_db", 1)
         migrationTestHelper.runMigrationsAndValidate(
             "test_db",
@@ -93,18 +93,23 @@ class MusicDbTest {
             Migrations.migration1To2
         )
     }
+    @Test
+    fun firstToSecondMigrationInP3() {
+        migrationTestHelper.createDatabase("test_db", 2)
+        migrationTestHelper.runMigrationsAndValidate(
+            "test_db",
+            3,
+            false,
+            Migrations.migration1To2, Migrations.migration2To3
+        )
+    }
 
     @Test
     fun testMultiTableChangeInP3() {
-        val migrationTestHelper = MigrationTestHelper(
-            InstrumentationRegistry.getInstrumentation(),
-            MusicDatabase::class.java.canonicalName,
-            FrameworkSQLiteOpenHelperFactory()
-        )
         migrationTestHelper.createDatabase("test_db", 2).use { db ->
             // I ended up making all album and artist ids not null should i switch this back
             //db.execSQL("INSERT INTO Song VALUES (1, 'Ni Bien Ni Mal', 240, NULL)")
-            db.execSQL("INSERT INTO Song VALUES (1, 'Ni Bien Ni Mal', 240, 1)")
+            db.execSQL("INSERT INTO Song VALUES (1, 'Ni Bien Ni Mal', 240, 1, 1)")
         }
         migrationTestHelper.runMigrationsAndValidate(
             "test_db",
@@ -122,4 +127,29 @@ class MusicDbTest {
         val dao = db.musicDao()
         assertThat(dao.getAllSongs().size).isEqualTo(1)
     }
+
+    @Test
+    fun thirdToFourthMigration() {
+        migrationTestHelper.createDatabase("test_db", 3).use { db ->
+            db.execSQL("INSERT INTO Artist VALUES (1, 'Bad Bunny')")
+            db.execSQL("INSERT INTO Album VALUES (1, 'YHLQMDLG')")
+            db.execSQL("INSERT INTO Song VALUES (1, 'Ni Bien Ni Mal', 1, 1, 1)")
+        }
+        migrationTestHelper.runMigrationsAndValidate(
+            "test_db",
+            4,
+            false,
+            Migrations.migration1To2, Migrations.migration2To3,
+            Migrations.migration3To4
+        )
+        val db = Room.databaseBuilder(
+            InstrumentationRegistry.getInstrumentation().context,
+            MusicDatabase::class.java,
+            "test_db"
+        ).build()
+        val dao = db.musicDao()
+        assertThat(dao.getAllSongs().size).isEqualTo(1)
+        db.close()
+    }
+
 }
